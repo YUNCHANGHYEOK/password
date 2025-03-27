@@ -1,11 +1,23 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
 import { GameContext } from '../contexts/GameContext';
+import { rules } from '../utils/rules';
 
 export default function GameScreen({ navigation }) {
   const { state, dispatch } = useContext(GameContext);
 
   const allPassed = state.appliedRules.every(rule => rule.check(state.password));
+
+  // 조건을 만족하면 다음 규칙 하나만 등장
+  useEffect(() => {
+    if (
+      allPassed &&
+      state.ruleIndex === state.appliedRules.length &&
+      state.ruleIndex < rules.length
+    ) {
+      dispatch({ type: 'ADD_RULE' });
+    }
+  }, [state.password, state.appliedRules]);
 
   return (
     <View style={styles.container}>
@@ -20,20 +32,14 @@ export default function GameScreen({ navigation }) {
       <FlatList
         data={state.appliedRules}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <Text style={{ color: item.check(state.password) ? 'green' : 'red' }}>
-            {item.description}
+            조건 {index + 1}: {item.description}
           </Text>
         )}
       />
 
-      <Button
-        title="다음 규칙 추가"
-        onPress={() => dispatch({ type: 'ADD_RULE' })}
-        disabled={!allPassed}
-      />
-
-      {allPassed && state.ruleIndex === state.appliedRules.length && (
+      {allPassed && state.ruleIndex === rules.length && (
         <Button title="성공! 결과 보기" onPress={() => navigation.navigate('Result')} />
       )}
     </View>
